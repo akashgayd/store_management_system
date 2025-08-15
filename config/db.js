@@ -3,7 +3,7 @@ const sql = require('mssql');
 const config = {
     user: process.env.DB_USER || 'sa',
     password: process.env.DB_PASSWORD || 'sne@1234',
-    server: process.env.DB_SERVER || 'DESKTOP-4C6OE5K',
+    server: process.env.DB_SERVER || '192.168.34.99',
     database: process.env.DB_DATABASE || 'RestaurantStockDB',
     options: {
         encrypt: false,
