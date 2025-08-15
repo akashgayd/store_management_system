@@ -149,6 +149,78 @@ OUTPUT INSERTED.*;
             throw new Error(`Database error: ${error.message}`);
         }
     }
+
+
+
+
+
+
+  /* …existing addProduct, addBulkProducts, findByName … */
+
+  // 🔹 Get list with optional filters & pagination
+  static async getProducts({ search, category, page = 1, limit = 20 }) {
+    const pool = getPool();
+    const offset = (page - 1) * limit;
+
+    let baseQuery = `
+      SELECT * FROM products WHERE 1 = 1
+        ${search   ? 'AND name LIKE @search'      : ''}
+        ${category ? 'AND category = @category'   : ''}
+      ORDER BY product_id DESC
+      OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY;
+    `;
+
+    const request = pool.request();
+    if (search)   request.input('search',   sql.VarChar, `%${search}%`);
+    if (category) request.input('category', sql.VarChar,  category);
+    request.input('offset', sql.Int, offset);
+    request.input('limit',  sql.Int, limit);
+
+    const result = await request.query(baseQuery);
+    return result.recordset;
+  }
+
+  // 🔹 Get single product by primary key
+  static async getProductById(id) {
+    const pool = getPool();
+    const request = pool.request();
+    request.input('id', sql.Int, id);
+
+    const result = await request.query(
+      'SELECT * FROM products WHERE product_id = @id'
+    );
+    return result.recordset[0] || null;
+  }
+
+
+  /* ---------- UPDATE product by id ---------- */
+static async updateProduct(id, data) {
+  const pool = getPool();
+
+  /* Build SET clause dynamically */
+  const allowed = [
+    'name','category','unit','quantity',
+    'price','expiry_date','reorder_level','supplier_id'
+  ];
+  const keys   = Object.keys(data).filter(k => allowed.includes(k));
+  if (keys.length === 0) throw new Error('No valid fields to update');
+
+  const setClauses = keys.map((k, i) => `${k} = @v${i}`).join(', ');
+  const request    = pool.request().input('id', sql.Int, id);
+
+  keys.forEach((k, i) => {
+    request.input(`v${i}`, data[k] === '' ? null : data[k]);
+  });
+
+  const result = await request.query(`
+    UPDATE products SET ${setClauses}
+    OUTPUT INSERTED.*
+    WHERE product_id = @id
+  `);
+
+  return result.recordset[0] || null;
+}
+
 }
 
 module.exports = ProductModel;

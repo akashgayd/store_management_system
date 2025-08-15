@@ -8,6 +8,7 @@ const { connectDB } = require('./config/db');
 
 // Import routes
 const productRoutes = require('./routes/productRoutes');
+const salesRoutes = require('./routes/salesRoutes');
 
 // Initialize Express app
 const app = express();
@@ -25,6 +26,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Routes
 app.use('/api/products', productRoutes);
+app.use('/api/sales', salesRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

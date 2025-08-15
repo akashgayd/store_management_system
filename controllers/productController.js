@@ -59,7 +59,67 @@ class ProductController {
 
 
 
-    
+
+
+  // GET /api/products
+  static async getProducts(req, res) {
+    try {
+      const { search, category, page, limit } = req.query;
+
+      const products = await ProductModel.getProducts({
+        search,
+        category,
+        page:  Number(page)  || 1,
+        limit: Number(limit) || 20
+      });
+
+      return responseHelper.success(res, 'Products fetched', products);
+    } catch (error) {
+      console.error('Get Products Error:', error);
+      return responseHelper.error(res, error.message, 500);
+    }
+  }
+
+  // GET /api/products/:id
+  static async getProduct(req, res) {
+    try {
+      const { id } = req.params;
+      const product = await ProductModel.getProductById(id);
+
+      if (!product) {
+        return responseHelper.error(res, 'Product not found', 404);
+      }
+      return responseHelper.success(res, 'Product fetched', product);
+    } catch (error) {
+      console.error('Get Product Error:', error);
+      return responseHelper.error(res, error.message, 500);
+    }
+  }
+
+  // PUT /api/products/:id
+static async updateProduct(req, res) {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    /* optional: stop duplicate names */
+    if (updates.name) {
+      const dup = await ProductModel.findByName(updates.name);
+      if (dup && dup.product_id !== Number(id)) {
+        return responseHelper.error(res, 'Product name already in use', 409);
+      }
+    }
+
+    const updated = await ProductModel.updateProduct(id, updates);
+    if (!updated) return responseHelper.error(res, 'Product not found', 404);
+
+    return responseHelper.success(res, 'Product updated', updated);
+  } catch (err) {
+    console.error('Update Product Error:', err);
+    return responseHelper.error(res, err.message, 500);
+  }
+}
+
 }
 
 module.exports = ProductController;
