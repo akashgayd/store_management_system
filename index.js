@@ -3,12 +3,17 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+
 // Import database connection
 const { connectDB } = require('./config/db');
 
 // Import routes
 const productRoutes = require('./routes/productRoutes');
 const salesRoutes = require('./routes/salesRoutes');
+// Import alert routes
+const alertRoutes = require('./routes/alertRoutes');
+const purchaseReportRoutes = require('./routes/purchaseReportRoutes');
+
 
 // Initialize Express app
 const app = express();
@@ -27,6 +32,9 @@ if (!fs.existsSync(uploadsDir)) {
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/purchase-reports', purchaseReportRoutes);
+
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -67,6 +75,16 @@ const startServer = async () => {
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
             console.log(`📋 API Documentation: http://localhost:${PORT}/health`);
+            
+            // ✅ ADD THESE LINES - Load cron jobs AFTER server starts
+            console.log('📅 Loading cron jobs...');
+            try {
+                require('./jobs/lowStockChecker');
+                require('./jobs/dailyReportMailer');
+                console.log('✅ Cron jobs loaded successfully');
+            } catch (error) {
+                console.error('❌ Failed to load cron jobs:', error);
+            }
         });
         
     } catch (error) {
@@ -74,6 +92,7 @@ const startServer = async () => {
         process.exit(1);
     }
 };
+
 
 startServer();
 

@@ -220,6 +220,15 @@ static async updateProduct(id, data) {
 
   return result.recordset[0] || null;
 }
+static async findLowStockProducts() {
+  const pool = getPool();
+  const q = `
+    SELECT product_id, name, category, unit, quantity, reorder_level
+    FROM products
+    WHERE quantity <= reorder_level
+  `;
+  return (await pool.request().query(q)).recordset;
+}
 
 }
 
